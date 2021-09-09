@@ -39,24 +39,42 @@ int main( int argc, char **argv)
 
    /*** receive computed row_sums from  pid 1 ***/
     mtag = 2;
-    MPI_Recv(row_sum, 50, MPI_INT, 1, mtag, MPI_COMM_WORLD, &status);
+    MPI_Recv(&row_sum[0], 25, MPI_INT, 1, mtag, MPI_COMM_WORLD, &status);
+    
+    mtag = 3;
+    MPI_Recv(&row_sum[25], 25, MPI_INT, 1, mtag, MPI_COMM_WORLD, &status);
+
     for(i=0; i<100; i++) {
        printf(" %d  ", row_sum[i]);
-       if(i%5 ==0) printf("\n");
+       if(i%5 == 0) printf("\n");
     }
   } else { /*** pid == 1 ***/
     mtag = 1;
     MPI_Recv(data, 5000, MPI_INT, 0, mtag, MPI_COMM_WORLD, &status);
 
-    for(i=0; i<50; i++) {
+    mtag = 2;
+    for(i=0; i<25; i++) {
       row_sum[i] = 0;
       for(j=0; j<100; j++)
-         row_sum[i] += data[i][j];
+        row_sum[i] += data[i][j];
     }
 
+    MPI_Isend(row_sum, 25, MPI_INT, 0, mtag, MPI_COMM_WORLD, &req_r);
+
+    mtag = 3;
+    for(i=25; i<50; i++) {
+      row_sum[i] = 0;
+      for(j=0; j<100; j++)
+        row_sum[i] += data[i][j];
+    }
+
+    MPI_Wait(&req_r, &status);
+
+    MPI_Send(row_sum, 25, MPI_INT, 0, mtag, MPI_COMM_WORLD);
+
    /*** Send computed row_sums to pid 0 ***/
-    mtag = 2;
-    MPI_Send(row_sum, 50, MPI_INT, 0, mtag, MPI_COMM_WORLD);
+    // mtag = 2;
+    // MPI_Send(row_sum, 50, MPI_INT, 0, mtag, MPI_COMM_WORLD);
   }
 
   MPI_Finalize();
