@@ -37,10 +37,11 @@ int main( int argc, char **argv)
 
     MPI_Wait(&req_s, &status);
 
-   /*** receive computed row_sums from  pid 1 ***/
+    // Receiving the first 25 rows calculated in pid 1
     mtag = 2;
     MPI_Recv(&row_sum[0], 25, MPI_INT, 1, mtag, MPI_COMM_WORLD, &status);
     
+    // Receiving the other 25 rows calculated in pid 1
     mtag = 3;
     MPI_Recv(&row_sum[25], 25, MPI_INT, 1, mtag, MPI_COMM_WORLD, &status);
 
@@ -50,8 +51,10 @@ int main( int argc, char **argv)
     }
   } else { /*** pid == 1 ***/
     mtag = 1;
+    // Receiving data from pid 0
     MPI_Recv(data, 5000, MPI_INT, 0, mtag, MPI_COMM_WORLD, &status);
 
+    // Generating first 25 rows
     mtag = 2;
     for(i=0; i<25; i++) {
       row_sum[i] = 0;
@@ -59,8 +62,11 @@ int main( int argc, char **argv)
         row_sum[i] += data[i][j];
     }
 
+    // Sending first 25 rows with non-blocking Isend method
     MPI_Isend(row_sum, 25, MPI_INT, 0, mtag, MPI_COMM_WORLD, &req_r);
 
+    // Simultaneously with sending the first 25 rows
+    // Generating the rest of the other 25 rows
     mtag = 3;
     for(i=25; i<50; i++) {
       row_sum[i] = 0;
@@ -68,13 +74,11 @@ int main( int argc, char **argv)
         row_sum[i] += data[i][j];
     }
 
+    // Waiting for non-blocking Isend method to finish
     MPI_Wait(&req_r, &status);
 
+    // Send the rest of the 25 rows
     MPI_Send(row_sum, 25, MPI_INT, 0, mtag, MPI_COMM_WORLD);
-
-   /*** Send computed row_sums to pid 0 ***/
-    // mtag = 2;
-    // MPI_Send(row_sum, 50, MPI_INT, 0, mtag, MPI_COMM_WORLD);
   }
 
   MPI_Finalize();
