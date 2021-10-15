@@ -1,4 +1,4 @@
 #!/bin/bash
 
 mpicc -o $1 ./$1.c
-mpirun -np 8 ./$1
+mpirun -np 4 ./$1
